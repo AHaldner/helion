@@ -6,7 +6,14 @@ fn index() -> &'static str {
     "Hello, Docker!"
 }
 
+#[get("/hello/<name>")]
+fn hello(name: &str) -> String {
+    format!("Hello, {}!", name)
+}
+
 #[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+fn rocket() -> rocket::Rocket<rocket::Build> {
+    rocket::build()
+        .mount("/", routes![index])
+        .mount("/", routes![hello])
 }
