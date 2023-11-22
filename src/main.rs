@@ -1,33 +1,33 @@
 #[macro_use]
 extern crate rocket;
-extern crate clap;
-
-use clap::Parser;
-
-#[derive(Parser)]
-struct CliArgs {
-    #[clap(long, default_value = "default value")]
-    input: String,
-}
+use std::io::{self, Write};
+use std::thread;
 
 #[get("/")]
 fn index() -> &'static str {
-    "Hello, Docker!"
+    "Rust CMS API"
 }
 
-#[get("/hello/<name>")]
-fn hello(name: &str) -> String {
-    format!("Hello, {}!", name)
+fn main() {
+    // Spawn a new thread for the CLI
+    thread::spawn(move || {
+        cli_task();
+    });
+
+    // Start the Rocket web server on the main thread
+    rocket::build().mount("/", routes![index]).launch();
 }
 
-#[get("/cli")]
-fn cli() -> String {
-    let args = CliArgs::parse();
-    format!("Hello, {}!", args.input)
-}
+fn cli_task() {
+    loop {
+        print!("Enter command: ");
+        io::stdout().flush().unwrap();
 
-#[launch]
-fn rocket() -> rocket::Rocket<rocket::Build> {
-    rocket::build()
-        .mount("/", routes![index, hello, cli])
+        let mut input = String::new();
+        io::stdin().read_line(&mut input).unwrap();
+
+        // Process the input
+        println!("You entered: {}", input.trim());
+        // Add logic to interact with shared resources or perform actions
+    }
 }
