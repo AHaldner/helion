@@ -1,33 +1,33 @@
 #[macro_use]
 extern crate rocket;
-use std::io::{self, Write};
-use std::thread;
+
+use inquire::Text;
+use tokio::{spawn, time::sleep};
+use std::time::Duration;
 
 #[get("/")]
 fn index() -> &'static str {
     "Rust CMS API"
 }
 
-fn main() {
-    // Spawn a new thread for the CLI
-    thread::spawn(move || {
-        cli_task();
-    });
-
-    // Start the Rocket web server on the main thread
-    rocket::build().mount("/", routes![index]).launch();
+fn start_server() -> rocket::Rocket<rocket::Build> {
+    rocket::build().mount("/", routes![index])
 }
 
-fn cli_task() {
-    loop {
-        print!("Enter command: ");
-        io::stdout().flush().unwrap();
+#[tokio::main]
+async fn main() {
+    let rocket = start_server();
+    let server = spawn(async move {
+        rocket.launch().await.unwrap();
+    });
 
-        let mut input = String::new();
-        io::stdin().read_line(&mut input).unwrap();
+    // Wait for the server to start
+    sleep(Duration::from_secs(2)).await;
 
-        // Process the input
-        println!("You entered: {}", input.trim());
-        // Add logic to interact with shared resources or perform actions
-    }
+    // Start your CLI here
+    let name_prompt = Text::new("Please enter your name:");
+    let name = name_prompt.prompt().expect("Failed to read line");
+    println!("Hello, {}!", name);
+
+    server.await.unwrap();
 }
